@@ -4,12 +4,6 @@ import dns.rdataclass
 import dns.rdtypes
 import dns.rdtypes.ANY
 from dns.rdtypes.ANY.MX import MX
-import dns.message
-import dns.rdatatype
-import dns.rdataclass
-import dns.rdtypes
-import dns.rdtypes.ANY
-from dns.rdtypes.ANY.MX import MX
 from dns.rdtypes.ANY.SOA import SOA
 import dns.rdata
 import socket
@@ -35,14 +29,14 @@ def generate_aes_key(password, salt):
     key = kdf.derive(password.encode('utf-8'))
     key = base64.urlsafe_b64encode(key)
     return key
+
 def encrypt_with_aes(input_string, password, salt):
     key = generate_aes_key(password, salt)
     f = Fernet(key)
     encrypted_data = f.encrypt(input_string.encode('utf-8'))
-    return encrypted_data
+    return key, encrypted_data
 
-def decrypt_with_aes(encrypted_data, password, salt):
-    key = generate_aes_key(password, salt)
+def decrypt_with_aes(encrypted_data, key):
     f = Fernet(key)
     decrypted_data = f.decrypt(encrypted_data)
     return decrypted_data.decode('utf-8')
@@ -51,14 +45,14 @@ salt = b'Tandon'
 password = 'tc2857@nyu.edu'
 input_string = "AlwaysWatching"
 
-encrypted_value = encrypt_with_aes(input_string, password, salt)
-decrypted_value = decrypt_with_aes(encrypted_value, password, salt)
-
+key, encrypted_value = encrypt_with_aes(input_string, password, salt)
+decrypted_value = decrypt_with_aes(encrypted_value, key)
 
 def generate_sha256_hash(input_string):
     sha256_hash = hashlib.sha256()
     sha256_hash.update(input_string.encode('utf-8'))
     return sha256_hash.hexdigest()
+
 dns_records = {
     'example.com.': {
         dns.rdatatype.A: '192.168.1.101',
@@ -68,13 +62,13 @@ dns_records = {
         dns.rdatatype.NS: 'ns.example.com.',
         dns.rdatatype.TXT: ('This is a TXT record',),
         dns.rdatatype.SOA: (
-            'ns1.example.com.',
-            'admin.example.com.',
-            2023081401,
-            3600,
-            1800,
-            604800,
-            86400,
+            'ns1.example.com.', #mname
+            'admin.example.com.', #rname
+            2023081401, #serial
+            3600, #refresh
+            1800, #retry
+            604800, #expire
+            86400, #minimum
         ),
     },
     'safebank.com.': {
@@ -164,3 +158,4 @@ if __name__ == '__main__':
     run_dns_server_user()
     #print("Encrypted Value:", encrypted_value)
     #print("Decrypted Value:", decrypted_value)
+
