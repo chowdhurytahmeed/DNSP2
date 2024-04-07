@@ -37,9 +37,13 @@ def encrypt_with_aes(input_string, password, salt):
     return key, encrypted_data
 
 def decrypt_with_aes(encrypted_data, key):
-    f = Fernet(key)
-    decrypted_data = f.decrypt(encrypted_data)
-    return decrypted_data.decode('utf-8')
+    try:
+        f = Fernet(key)
+        decrypted_data = f.decrypt(encrypted_data)
+        return decrypted_data.decode('utf-8')
+    except Exception as e:
+        print("Decrypt error:", e)
+        return None
 
 salt = b'Tandon'
 password = 'tc2857@nyu.edu'
@@ -47,6 +51,10 @@ input_string = "AlwaysWatching"
 
 key, encrypted_value = encrypt_with_aes(input_string, password, salt)
 decrypted_value = decrypt_with_aes(encrypted_value, key)
+if decrypted_value is not None:
+    print("Decrypted Value:", decrypted_value)
+else:
+    print("Failed")
 
 def generate_sha256_hash(input_string):
     sha256_hash = hashlib.sha256()
