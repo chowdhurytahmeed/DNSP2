@@ -30,31 +30,23 @@ def generate_aes_key(password, salt):
     key = base64.urlsafe_b64encode(key)
     return key
 
-def encrypt_with_aes(input_string, key):
+def encrypt_with_aes(input_string, password, salt):
+    key = generate_aes_key(password, salt)
     f = Fernet(key)
     encrypted_data = f.encrypt(input_string.encode('utf-8'))
-    return encrypted_data
+    return key, encrypted_data
 
 def decrypt_with_aes(encrypted_data, key):
-    try:
-        f = Fernet(key)
-        decrypted_data = f.decrypt(encrypted_data) 
-        return decrypted_data.decode('utf-8')
-    except Exception as e:
-        print(e)
-        return None
+    f = Fernet(key)
+    decrypted_data = f.decrypt(encrypted_data)
+    return decrypted_data.decode('utf-8')
 
 salt = b'Tandon'
 password = 'tc2857@nyu.edu'
 input_string = "AlwaysWatching"
 
-key = generate_aes_key(password, salt)
-encrypted_value = encrypt_with_aes(input_string, key) 
-decrypted_value = decrypt_with_aes(encrypted_value, key) 
-if decrypted_value is not None:
-    print(decrypted_value)
-else:
-    print("Failed.")
+key, encrypted_value = encrypt_with_aes(input_string, password, salt)
+decrypted_value = decrypt_with_aes(encrypted_value, key)
 
 def generate_sha256_hash(input_string):
     sha256_hash = hashlib.sha256()
@@ -101,7 +93,7 @@ dns_records = {
 }
 
 def run_dns_server():
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # Research this
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     server_socket.bind(('127.0.0.1', 53))
 
     while True:
@@ -124,7 +116,7 @@ def run_dns_server():
                         rdata_list.append(MX(dns.rdataclass.IN, dns.rdatatype.MX, pref, server))
                 elif qtype == dns.rdatatype.SOA:
                     mname, rname, serial, refresh, retry, expire, minimum = answer_data
-                    rdata = SOA(dns.rdataclass.IN, dns.rdatatype.SOA, mname, rname, serial, refresh, retry, expire, minimum) 
+                    rdata = SOA(dns.rdataclass.IN, dns.rdatatype.SOA, mname, rname, serial, refresh, retry, expire, minimum)
                     rdata_list.append(rdata)
                 else:
                     if isinstance(answer_data, str):
@@ -136,6 +128,7 @@ def run_dns_server():
                     response.answer[-1].add(rdata)
 
             response.flags |= 1 << 10
+
             print("Responding to request:", qname)
             server_socket.sendto(response.to_wire(), addr)
         except KeyboardInterrupt:
